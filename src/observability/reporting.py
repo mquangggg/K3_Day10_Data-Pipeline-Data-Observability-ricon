@@ -89,15 +89,23 @@ def generate_corruption_report(
     c_f1 = corrupted_metrics.get("mean_token_f1", 0.0)
     r_f1 = repaired_metrics.get("mean_token_f1", 0.0)
 
-    md = r"""# Corruption & Recovery Impact Report
+    c_pass = corrupted_quality.get("passed", False)
+    c_fresh = corrupted_freshness.get("is_fresh", False)
+    r_pass = repaired_quality.get("passed", False)
+    r_fresh = repaired_freshness.get("is_fresh", False)
+
+    delta_corrupt = c_hit - b_hit
+    delta_repair = r_hit - c_hit
+
+    md = f"""# Corruption & Recovery Impact Report
 
 ## 1. Metric Comparison Overview
 
 | State | Retrieval Hit Rate | Mean Token F1 | Quality Passed | Freshness Status |
 | :--- | :---: | :---: | :---: | :---: |
 | **Baseline** | {b_hit:.4f} | {b_f1:.4f} | True | Fresh |
-| **Corrupted** | {c_hit:.4f} | {c_f1:.4f} | {corrupted_quality.get('passed', False)} | {corrupted_freshness.get('is_fresh', False)} |
-| **Repaired** | {r_hit:.4f} | {r_f1:.4f} | {repaired_quality.get('passed', False)} | {repaired_freshness.get('is_fresh', False)} |
+| **Corrupted** | {c_hit:.4f} | {c_f1:.4f} | {c_pass} | {c_fresh} |
+| **Repaired** | {r_hit:.4f} | {r_f1:.4f} | {r_pass} | {r_fresh} |
 
 ## 2. Impact Analysis
 - **Impact of Corruption (Delta Hit Rate):** {delta_corrupt:+.4f}
@@ -105,20 +113,8 @@ def generate_corruption_report(
 
 ## 3. Conclusion
 - Repairing clean dataset directly from reliable raw source restores data observability signals and evaluation metrics back to baseline level.
-""".format(
-        b_hit=b_hit,
-        b_f1=b_f1,
-        c_hit=c_hit,
-        c_f1=c_f1,
-        r_hit=r_hit,
-        r_f1=r_f1,
-        corrupted_quality=corrupted_quality,
-        corrupted_freshness=corrupted_freshness,
-        repaired_quality=repaired_quality,
-        repaired_freshness=repaired_freshness,
-        delta_corrupt=c_hit - b_hit,
-        delta_repair=r_hit - c_hit,
-    )
+"""
     write_text(Path(report_path), md)
+
 
 

@@ -41,6 +41,8 @@ def main() -> None:
         settings.paths.baseline_metrics,
         settings.paths.baseline_answers,
     )
+    baseline_quality = run_data_quality_checks(clean_df, settings, "baseline_quality")
+    baseline_freshness = build_freshness_report(clean_df, settings, settings.paths.freshness_report)
 
     # 2. Corrupted Flow
     corrupted_df = corrupt_clean_dataframe(clean_df, settings.paths.corruption_log)
@@ -80,12 +82,15 @@ def main() -> None:
         baseline_bundle.summary,
         corrupted_bundle.summary,
         repaired_bundle.summary,
+        baseline_quality,
         corrupted_quality,
         repaired_quality,
+        baseline_freshness,
         corrupted_freshness,
         repaired_freshness,
     )
     print(f"Generated corruption comparison report at {settings.paths.comparison_report}")
+
     print("Corruption flow pipeline completed successfully!")
 
 

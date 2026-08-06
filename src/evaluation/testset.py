@@ -25,44 +25,49 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             
         # 3. Tao nhieu loai cau hoi & 4. Moi row can co cac field yeu cau
         # Cau hoi ve tac gia
-        if 'authors' in row and pd.notna(row['authors']):
+        authors_val = row.get('authors')
+        if authors_val is not None and len(authors_val) > 0:
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "authors",
                 "question": f"Ai là tác giả của bài báo '{title}'?",
-                "ground_truth": str(row['authors']),
+                "ground_truth": str(authors_val),
                 "ground_truth_doc_ids": [doc_id]
             })
             
         # Cau hoi ve summary
-        if 'summary' in row and pd.notna(row['summary']) and str(row['summary']).strip() != "":
+        summary_val = row.get('summary')
+        if summary_val is not None and str(summary_val).strip() != "":
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "summary",
                 "question": f"Tóm tắt nội dung chính của bài báo '{title}' là gì?",
-                "ground_truth": str(row['summary']),
+                "ground_truth": str(summary_val),
                 "ground_truth_doc_ids": [doc_id]
             })
             
         # Cau hoi ve ngay xuat ban
-        if 'published' in row and pd.notna(row['published']):
+        published_val = row.get('published')
+        if published_val is not None and str(published_val).strip() != "":
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "date",
                 "question": f"Bài báo '{title}' được xuất bản khi nào?",
-                "ground_truth": str(row['published']),
+                "ground_truth": str(published_val),
                 "ground_truth_doc_ids": [doc_id]
             })
             
         # Cau hoi ve categories
-        if 'categories' in row and pd.notna(row['categories']):
+        categories_val = row.get('categories')
+        if categories_val is not None and len(categories_val) > 0:
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "categories",
                 "question": f"Chủ đề của bài báo '{title}' là gì?",
-                "ground_truth": str(row['categories']),
+                "ground_truth": str(categories_val),
                 "ground_truth_doc_ids": [doc_id]
             })
+
             
     # 5. Ghi file JSON vao output_path
     with open(output_path, 'w', encoding='utf-8') as f:
