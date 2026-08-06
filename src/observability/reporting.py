@@ -3,12 +3,44 @@ from pathlib import Path
 from core.utils import write_text
 
 
+def _format_value(val: Any, precision: int = 2) -> str:
+    """Format value cho markdown table."""
+    if val is None or val == "N/A":
+        return "N/A"
+    if isinstance(val, bool):
+        return "✅ Yes" if val else "❌ No"
+    if isinstance(val, float):
+        return f"{val:.{precision}f}"
+    if isinstance(val, int):
+        return f"{val:,}"
+    return str(val)
+
+
+def _calculate_delta(baseline: Any, current: Any) -> str:
+    """Calculate và format delta giữa baseline và current value."""
+    try:
+        baseline_val = float(baseline) if baseline not in [None, "N/A"] else 0
+        current_val = float(current) if current not in [None, "N/A"] else 0
+        
+        if baseline_val == 0:
+            return "N/A"
+        
+        delta = current_val - baseline_val
+        pct = (delta / baseline_val) * 100 if baseline_val != 0 else 0
+        
+        icon = "📈" if delta > 0 else "📉" if delta < 0 else "➡️"
+        return f"{icon} {delta:+.2f} ({pct:+.1f}%)"
+    except (ValueError, TypeError):
+        return "N/A"
+
+
 def generate_phase1_report(
     report_path: Any,
     source_summary: dict[str, Any],
     metrics: dict[str, Any],
     quality: dict[str, Any],
     freshness: dict[str, Any],
+    embedding_audit: dict[str, Any] | None = None,
 ) -> None:
     """Viet markdown report cho baseline phase."""
     md = f"""# Baseline Data Pipeline & Evaluation Report
@@ -41,8 +73,10 @@ def generate_corruption_report(
     baseline_metrics: dict[str, Any],
     corrupted_metrics: dict[str, Any],
     repaired_metrics: dict[str, Any],
+    baseline_quality: dict[str, Any],
     corrupted_quality: dict[str, Any],
     repaired_quality: dict[str, Any],
+    baseline_freshness: dict[str, Any],
     corrupted_freshness: dict[str, Any],
     repaired_freshness: dict[str, Any],
 ) -> None:
