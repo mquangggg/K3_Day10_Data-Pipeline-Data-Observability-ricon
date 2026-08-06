@@ -53,6 +53,20 @@ st.markdown(
         padding: 8px 12px;
         font-size: 0.9rem;
     }
+    .ai-box {
+        background-color: rgba(79, 70, 229, 0.1);
+        border-left: 4px solid #4F46E5;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 10px;
+    }
+    .ai-box-corrupted {
+        background-color: rgba(239, 68, 68, 0.1);
+        border-left: 4px solid #EF4444;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 10px;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -185,10 +199,11 @@ with col4:
 st.markdown("---")
 
 # Navigation Tabs
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📊 So sánh 3 Trạng thái (Overview)",
     "🚨 Tín hiệu Quan sát (Observability Signals)",
-    "🔍 Thử nghiệm RAG Search",
+    "🤖 RAG AI Agent & Semantic Search",
+    "🧪 Test Chất lượng Đầu vào (AI Input Tester)",
     "📝 Báo cáo Nhóm & Cá nhân",
 ])
 
@@ -258,37 +273,127 @@ with tab2:
     else:
         st.info("Chưa có corruption_log.json.")
 
-# TAB 3: Interactive RAG Search
+# TAB 3: Interactive RAG AI Agent
 with tab3:
-    st.subheader("🔍 Tìm kiếm Ngữ nghĩa trên CSDL Vector ChromaDB (`papers-baseline`)")
+    st.subheader("🤖 Thử nghiệm RAG AI Agent & Vector Search (Thành viên 2)")
 
-    query = st.text_input("Nhập câu hỏi tra cứu bài báo (Ví dụ: Large language model RAG agent)", "large language model RAG agent")
+    st.markdown("Thử nghiệm truy vấn ngữ nghĩa trên **Chroma Vector DB** và hỏi đáp trực tiếp với **RAG Agent**:")
 
-    if query:
+    corpus_choice = st.radio(
+        "Chọn Tập dữ liệu Vector DB để thử nghiệm:",
+        ["Baseline Dataset (Sạch 100%)", "Corrupted Dataset (Bị lỗi hỏng)", "Repaired Dataset (Đã phục hồi)"],
+        horizontal=True,
+    )
+
+    query = st.text_input("Nhập câu hỏi tra cứu bài báo (Ví dụ: Ai là tác giả của bài báo Retrieval-Augmented Generation?)", "Ai là tác giả của bài báo Retrieval-Augmented Generation?")
+
+    if st.button("🚀 Chạy RAG Agent Tra cứu"):
         try:
             from core.config import load_settings
             from retrieval.index import LocalEmbeddingIndex
 
             settings = load_settings()
-            clean_csv_path = settings.paths.clean_csv
+
+            if "Corrupted" in corpus_choice:
+                clean_csv_path = settings.paths.corrupted_clean_csv
+                coll_path = settings.paths.corrupted_embeddings_json
+                state_label = "Corrupted State (Bị nhiễm bẩn)"
+            elif "Repaired" in corpus_choice:
+                clean_csv_path = settings.paths.repaired_clean_csv
+                coll_path = settings.paths.repaired_embeddings_json
+                state_label = "Repaired State (Khôi phục)"
+            else:
+                clean_csv_path = settings.paths.clean_csv
+                coll_path = settings.paths.embeddings_json
+                state_label = "Baseline State (Chuẩn sạch)"
 
             if clean_csv_path.exists():
-                df_clean = pd.read_csv(clean_csv_path)
-                index = LocalEmbeddingIndex.build(df_clean, settings)
+                df_target = pd.read_csv(clean_csv_path)
+                index = LocalEmbeddingIndex.build(df_target, settings, coll_path)
+
+                st.markdown(f"### 📍 Trạng thái thử nghiệm: **{state_label}**")
+
+                # Perform Search
                 results = index.search(query, top_k=4)
 
-                st.success(f"Tìm thấy {len(results)} bài báo có độ tương đồng ngữ nghĩa cao nhất:")
-                for r in results:
-                    with st.expander(f"📌 {r.title} (Score: {r.score:.4f})"):
-                        st.markdown(f"**Paper ID (DOI):** `{r.paper_id}`")
-                        st.markdown(f"**Nội dung trích dẫn:**\n\n{r.content}")
-            else:
-                st.warning("Chưa tìm thấy papers_clean.csv. Hãy chạy Baseline Pipeline trước.")
-        except Exception as e:
-            st.error(f"Lỗi tra cứu: {e}")
+                col_res1, col_res2 = st.columns([1.2, 1])
 
-# TAB 4: Group & Individual Reports
+                with col_res1:
+                    st.markdown("#### 🔎 Top 4 Bài báo được Vector Index tìm ra (Retrieval):")
+                    for idx, r in enumerate(results, 1):
+                        box_class = "ai-box-corrupted" if "Corrupted" in corpus_choice and idx <= 2 else "ai-box"
+                        st.markdown(
+                            f"""<div class='{box_class}'>
+                            <b>#{idx}. {r.title}</b><br>
+                            🔑 <b>Paper ID (DOI):</b> <code>{r.paper_id}</code><br>
+                            📊 <b>Similarity Score:</b> <code>{r.score:.4f}</code><br>
+                            📝 <b>Abstract Sample:</b> {r.content[:200]}...
+                            </div>""",
+                            unsafe_allow_html=True,
+                        )
+
+                with col_res2:
+                    st.markdown("#### 🤖 Kết quả RAG Agent Phản hồi:")
+                    if results:
+                        best_match = results[0]
+                        if "Corrupted" in corpus_choice and best_match.score < 0.5:
+                            st.error("⚠️ **CẢNH BÁO AI:** Dữ liệu bị hỏng khiến độ tương đồng bị sụt giảm. RAG Agent khó tìm ra câu trả lời chính xác!")
+                        else:
+                            st.success("✅ **AI AGENT PHẢN HỒI:** Dựa vào cơ sở dữ liệu đã được truy xuất:")
+
+                        st.markdown(f"> **Câu hỏi:** *{query}*")
+                        st.markdown(f"> **Tài liệu tham chiếu:** `{best_match.paper_id}`")
+                        st.markdown(f"> **Trích dẫn nội dung:** {best_match.content[:300]}...")
+            else:
+                st.warning(f"Chưa có tệp {clean_csv_path.name}. Hãy bấm 'Run Corruption & Recovery Flow' ở thanh bên tả.")
+        except Exception as e:
+            st.error(f"Lỗi thử nghiệm AI: {e}")
+
+# TAB 4: AI Input Tester (Testing raw data quality before ingest)
 with tab4:
+    st.subheader("🧪 Kiểm thử Chất lượng Đầu vào (AI Data Quality Tester - Thành viên 3)")
+
+    st.markdown("Công cụ cho phép nhập thử một bài báo thô mới để kiểm tra các luật Quality Gates (Null, Duplicate, Summary, Freshness) trước khi đưa vào Pipeline:")
+
+    test_title = st.text_input("Tiêu đề bài báo (Title):", "Agentic AI Governance Architecture")
+    test_summary = st.text_area("Tóm tắt bài báo (Summary / Abstract):", "Enterprise adoption of AI including GenAI, RAG, and agentic AI governance architecture.")
+    test_published = st.date_input("Ngày xuất bản (Published Date):")
+    test_doi = st.text_input("Mã DOI / Paper ID:", "doi_10_21203_rs_3_rs_10012178_v1")
+
+    if st.button("🛡️ Kiểm tra Quality Gate cho Đầu vào này"):
+        from core.config import load_settings
+        from observability.quality import build_freshness_report, run_data_quality_checks
+
+        settings = load_settings()
+
+        mock_df = pd.DataFrame([{
+            "paper_id": test_doi,
+            "title": test_title,
+            "summary": test_summary,
+            "published": str(test_published),
+            "age_days": (pd.Timestamp.now() - pd.Timestamp(test_published)).days,
+        }])
+
+        q_res = run_data_quality_checks(mock_df, settings, "input_test_quality")
+        f_res = build_freshness_report(mock_df, settings, settings.paths.quality_dir / "input_test_freshness.json")
+
+        col_q1, col_q2 = st.columns(2)
+        with col_q1:
+            if q_res["passed"]:
+                st.success("✅ **DATA QUALITY GATE: PASSED!** Dữ liệu hợp lệ để nạp vào Vector DB.")
+            else:
+                st.error("❌ **DATA QUALITY GATE: FAILED!** Dữ liệu không đạt tiêu chuẩn (Thiếu tiêu đề hoặc rỗng tóm tắt).")
+            st.json(q_res)
+
+        with col_q2:
+            if f_res["is_fresh"]:
+                st.success("✅ **FRESHNESS MONITORING: FRESH!** Bài báo còn mới (≤ 180 ngày).")
+            else:
+                st.warning("⚠️ **FRESHNESS MONITORING: STALE!** Bài báo đã cũ (> 180 ngày).")
+            st.json(f_res)
+
+# TAB 5: Group & Individual Reports
+with tab5:
     st.subheader("📚 Tất cả Báo cáo Dự án (Group & Individual Reports)")
 
     report_choice = st.selectbox(
