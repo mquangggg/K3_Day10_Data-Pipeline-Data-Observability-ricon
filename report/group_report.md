@@ -17,7 +17,7 @@
 | --: | --- | --- | --- | --- |
 | 1 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 | 2 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
-| 3 | [Họ tên] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
+| 3 | Lương Ngọc Quang - 01563 | Corruption & Integration Owner | corruption.py, phase1.py, corruption_flow.py |
 | 4 | [Nếu có] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 | 5 | [Nếu có] | [MSSV] | [Vai trò] | [File, hàm hoặc artifact] |
 
