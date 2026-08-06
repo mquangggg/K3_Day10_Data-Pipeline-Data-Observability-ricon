@@ -5,3 +5,11 @@ lab.txt
 src/*.egg-info/
 lab/
 **/__pycache__/
+
+# Generated data files (should not be committed)
+data/embeddings/
+data/chroma/
+data/results/
+data/quality/
+data/eval/
+data/reports/
