@@ -1,0 +1,10 @@
+{
+  "report_name": "baseline_quality",
+  "total_rows": 24,
+  "paper_id_null_count": 0,
+  "paper_id_is_unique": true,
+  "title_null_count": 0,
+  "summary_empty_count": 0,
+  "stale_rows_count": 0,
+  "passed": true
+}
