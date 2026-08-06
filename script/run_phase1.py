@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Add src/ to python path
+src_dir = Path(__file__).resolve().parent.parent / "src"
+sys.path.append(str(src_dir))
+
 from pipelines.phase1 import main
 
 
