@@ -23,10 +23,16 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
         if not doc_id:
             continue
             
-        # 3. Tao nhieu loai cau hoi & 4. Moi row can co cac field yeu cau
+        # Helper function to safely check if field has value
+        def has_value(val):
+            if val is None:
+                return False
+            val_str = str(val).strip()
+            return len(val_str) > 0
+        
         # Cau hoi ve tac gia
         authors_val = row.get('authors')
-        if authors_val is not None and len(authors_val) > 0:
+        if authors_val is not None and has_value(authors_val):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "authors",
@@ -37,7 +43,7 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             
         # Cau hoi ve summary
         summary_val = row.get('summary')
-        if summary_val is not None and str(summary_val).strip() != "":
+        if summary_val is not None and has_value(summary_val):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "summary",
@@ -48,7 +54,7 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             
         # Cau hoi ve ngay xuat ban
         published_val = row.get('published')
-        if published_val is not None and str(published_val).strip() != "":
+        if published_val is not None and has_value(published_val):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "date",
@@ -59,7 +65,7 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             
         # Cau hoi ve categories
         categories_val = row.get('categories')
-        if categories_val is not None and len(categories_val) > 0:
+        if categories_val is not None and has_value(categories_val):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "categories",
@@ -74,3 +80,4 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
         json.dump(test_set, f, ensure_ascii=False, indent=4)
         
     return test_set
+
