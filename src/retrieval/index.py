@@ -42,28 +42,37 @@ class LocalEmbeddingIndex:
 
     @staticmethod
     def _build_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
-        records = df.to_dict(orient="records")
+        df_clean = df.copy()
+        for col in ["paper_id", "title", "text_for_embedding", "published", "authors_joined", "categories_joined", "summary", "abs_url", "pdf_url"]:
+            if col in df_clean.columns:
+                df_clean[col] = df_clean[col].fillna("").astype(str)
+
+        records = df_clean.to_dict(orient="records")
         documents: list[dict[str, Any]] = []
         for index, row in enumerate(records):
+            content_str = str(row.get("text_for_embedding", "")).strip() or str(row.get("title", "")).strip() or "No content available"
+            paper_id_str = str(row.get("paper_id", f"paper_{index}"))
+            title_str = str(row.get("title", "Untitled"))
             documents.append(
                 {
-                    "record_id": f"{row['paper_id']}::{index}",
-                    "paper_id": row["paper_id"],
-                    "title": row["title"],
-                    "content": row["text_for_embedding"],
+                    "record_id": f"{paper_id_str}::{index}",
+                    "paper_id": paper_id_str,
+                    "title": title_str,
+                    "content": content_str,
                     "metadata": {
-                        "paper_id": row["paper_id"],
-                        "title": row["title"],
-                        "published": row["published"],
-                        "authors_joined": row["authors_joined"],
-                        "categories_joined": row["categories_joined"],
-                        "summary": row["summary"],
-                        "abs_url": row["abs_url"],
-                        "pdf_url": row["pdf_url"],
+                        "paper_id": paper_id_str,
+                        "title": title_str,
+                        "published": str(row.get("published", "")),
+                        "authors_joined": str(row.get("authors_joined", "")),
+                        "categories_joined": str(row.get("categories_joined", "")),
+                        "summary": str(row.get("summary", "")),
+                        "abs_url": str(row.get("abs_url", "")),
+                        "pdf_url": str(row.get("pdf_url", "")),
                     },
                 }
             )
         return documents
+
 
     @staticmethod
     def _derive_collection_name(settings: Settings, embeddings_output_path: Path | None) -> str:

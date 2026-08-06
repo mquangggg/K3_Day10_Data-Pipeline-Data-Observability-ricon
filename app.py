@@ -308,8 +308,9 @@ with tab3:
                 state_label = "Baseline State (Chuẩn sạch)"
 
             if clean_csv_path.exists():
-                df_target = pd.read_csv(clean_csv_path)
+                df_target = pd.read_csv(clean_csv_path).fillna("")
                 index = LocalEmbeddingIndex.build(df_target, settings, coll_path)
+
 
                 st.markdown(f"### 📍 Trạng thái thử nghiệm: **{state_label}**")
 
