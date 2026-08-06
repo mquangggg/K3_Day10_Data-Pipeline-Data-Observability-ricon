@@ -1,83 +1,80 @@
 from __future__ import annotations
 
-import pandas as pd
-from datetime import datetime
-
-from core.config import Settings
-from ingestion.crossref import fetch_source_records, load_raw_records
-from ingestion.cleaning import build_clean_dataframe
-from ingestion.corruption import corrupt_clean_dataframe
-from retrieval.index import build_chroma_index
+from core.config import load_settings
+from core.utils import now_utc, write_csv, write_json
+from evaluation.metrics import evaluate_pipeline
 from evaluation.testset import build_test_set
-from evaluation.metrics import calculate_metrics
-from observability.quality import run_data_quality_checks, build_freshness_report
+from ingestion.cleaning import build_clean_dataframe
+from ingestion.crossref import fetch_source_records, load_raw_records
+from observability.quality import build_freshness_report, run_data_quality_checks
 from observability.reporting import generate_phase1_report
+from retrieval.index import LocalEmbeddingIndex
 
 
 def main() -> None:
-    """Build baseline pipeline end-to-end.
-    
-    Pseudo-code:
-    1. Load settings.
-    2. Load or fetch raw records.
-    3. Clean data.
-    4. Save clean CSV/JSON.
-    5. Build Chroma index.
-    6. Create or load evaluation set.
-    7. Evaluate.
-    8. Run quality checks and freshness report.
-    9. Generate markdown report.
-    10. Can demo agent on some sample question.
-    """
+    """Build baseline pipeline end-to-end."""
     # 1. Load settings
-    settings = Settings()
-    
+    settings = load_settings()
+
+
     # 2. Load or fetch raw records
     try:
         raw_records = load_raw_records(settings.paths.raw_records_json)
-        print("Loaded existing raw records")
+        print(f"Loaded {len(raw_records)} existing raw records from {settings.paths.raw_records_json}")
     except FileNotFoundError:
         print("Fetching new raw records from Crossref API...")
         raw_records = fetch_source_records(settings)
-    
+
     # 3. Clean data
-    run_date = datetime.now()
+    run_date = now_utc()
     clean_df = build_clean_dataframe(raw_records, run_date)
-    
+
     # 4. Save clean CSV/JSON
-    clean_df.to_csv(settings.paths.clean_csv, index=False)
-    clean_df.to_json(settings.paths.clean_json, orient='records', indent=2)
-    print(f"Saved clean data to {settings.paths.clean_csv} and {settings.paths.clean_json}")
-    
+    write_csv(clean_df, settings.paths.clean_csv)
+    write_json(settings.paths.clean_json, clean_df.to_dict(orient="records"))
+    print(f"Saved clean data: {len(clean_df)} rows to {settings.paths.clean_csv} and {settings.paths.clean_json}")
+
     # 5. Build Chroma index
-    collection = build_chroma_index(clean_df, settings)
-    print(f"Built Chroma index with {collection.count()} documents")
-    
+    index = LocalEmbeddingIndex.build(clean_df, settings)
+    print(f"Built Chroma index '{index.collection_name}' with {len(index.documents)} documents")
+
     # 6. Create or load evaluation set
-    test_set = build_test_set(clean_df, settings.paths.eval_json)
-    print(f"Created test set with {len(test_set)} questions")
-    
+    if not settings.paths.eval_testset.exists() or settings.refresh_test_set:
+        test_set = build_test_set(clean_df, settings.paths.eval_testset)
+        print(f"Created test set with {len(test_set)} questions at {settings.paths.eval_testset}")
+    else:
+        print(f"Using existing test set at {settings.paths.eval_testset}")
+
     # 7. Evaluate
-    metrics = calculate_metrics(collection, test_set)
-    print("Calculated evaluation metrics")
-    
+    bundle = evaluate_pipeline(
+        settings,
+        index,
+        settings.paths.eval_testset,
+        settings.paths.baseline_metrics,
+        settings.paths.baseline_answers,
+    )
+    print(f"Calculated baseline metrics: hit_rate={bundle.summary.get('retrieval_hit_rate', 0):.4f}, token_f1={bundle.summary.get('mean_token_f1', 0):.4f}")
+
     # 8. Run quality checks and freshness report
     quality_checks = run_data_quality_checks(clean_df, settings, "baseline_quality")
-    freshness_report = build_freshness_report(clean_df, settings, "baseline_freshness")
-    
+    freshness_report = build_freshness_report(clean_df, settings, settings.paths.freshness_report)
+
     # 9. Generate markdown report
     generate_phase1_report(
-        settings.paths.report_md,
+        settings.paths.baseline_report,
         {
-            "total_records": len(raw_records),
-            "clean_records": len(clean_df),
-            "source": "Crossref API"
+            "source_api": settings.source_api,
+            "source_query": settings.source_query,
+            "raw_count": len(raw_records),
+            "clean_count": len(clean_df),
         },
-        metrics,
+        bundle.summary,
         quality_checks,
-        freshness_report
+        freshness_report,
     )
-    print(f"Generated report at {settings.paths.report_md}")
-    
-    # 10. Demo agent on sample question (optional)
+    print(f"Generated baseline report at {settings.paths.baseline_report}")
     print("Phase 1 pipeline completed successfully!")
+
+
+if __name__ == "__main__":
+    main()
