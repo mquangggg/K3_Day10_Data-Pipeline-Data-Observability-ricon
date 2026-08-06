@@ -24,8 +24,15 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             continue
             
         # 3. Tao nhieu loai cau hoi & 4. Moi row can co cac field yeu cau
+        # Helper function to safely check if field has value
+        def has_value(val):
+            if val is None:
+                return False
+            val_str = str(val).strip()
+            return len(val_str) > 0
+        
         # Cau hoi ve tac gia
-        if 'authors' in row and pd.notna(row['authors']):
+        if 'authors' in row and has_value(row['authors']):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "authors",
@@ -35,7 +42,7 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             })
             
         # Cau hoi ve summary
-        if 'summary' in row and pd.notna(row['summary']) and str(row['summary']).strip() != "":
+        if 'summary' in row and has_value(row['summary']):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "summary",
@@ -45,7 +52,7 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             })
             
         # Cau hoi ve ngay xuat ban
-        if 'published' in row and pd.notna(row['published']):
+        if 'published' in row and has_value(row['published']):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "date",
@@ -55,7 +62,7 @@ def build_test_set(df: pd.DataFrame, output_path) -> list[dict[str, Any]]:
             })
             
         # Cau hoi ve categories
-        if 'categories' in row and pd.notna(row['categories']):
+        if 'categories' in row and has_value(row['categories']):
             test_set.append({
                 "id": str(uuid.uuid4()),
                 "question_type": "categories",
