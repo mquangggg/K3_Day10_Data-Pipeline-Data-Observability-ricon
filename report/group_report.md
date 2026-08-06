@@ -13,9 +13,9 @@
 
 | STT | Họ và tên | MSSV | Vai trò chính | Module/deliverable sở hữu |
 | --: | --- | --- | --- | --- |
-| 1 | **Vũ Minh Quang** | 2A202601515 | Trưởng nhóm (Lead + Ingest + Clean) | `crossref.py`, `cleaning.py`, `phase1.py`, `corruption_flow.py` |
-| 2 | **Phạm Kiên** | 2A202601512 | RAG & Evaluation Owner | `index.py`, `testset.py`, `metrics.py`, `agent.py` |
-| 3 | **Lương Ngọc Quang** | 01563 | Observability & Reporting Owner | `quality.py`, `reporting.py`, `check_corrupted_quality.py` |
+| 1 | **Vũ Minh Quang** | **2A202601515** | Trưởng nhóm (Lead + Ingest + Clean) | `crossref.py`, `cleaning.py`, `phase1.py`, `corruption_flow.py` |
+| 2 | **Phạm Trung Kiên** | **2A202601525** | RAG & Evaluation Owner | `index.py`, `testset.py`, `metrics.py`, `agent.py` |
+| 3 | **Lương Ngọc Quang** | **2A202601563** | Observability & Reporting Owner | `quality.py`, `reporting.py`, `check_corrupted_quality.py` |
 
 ## 2. Tóm tắt kết quả
 
@@ -23,7 +23,7 @@ Nhóm **ricon** đã hoàn thành 100% các mục tiêu từ CP0 đến CP6 tron
 
 Pipeline cơ bản (Baseline) thu thập 24 bài báo thô, làm sạch đạt 100% duy nhất `paper_id` và đạt điểm số `Retrieval Hit Rate` tối đa **1.0000** trên bộ đề thi 20 câu hỏi `test_set.json`.
 
-Khi thực hiện kịch bản hỏng dữ liệu có kiểm soát (Controlled Corruption), chất lượng RAG suy giảm rõ rệt: `Retrieval Hit Rate` sụt giảm 20% xuống còn **0.8000**, đồng thời hệ thống Quality Gates phát hiện lỗi sớm và chuyển trạng thái sang **`passed = False`** (phát hiện 2 dòng bị rỗng summary và tiêu đề bị biến dạng).
+Khi thực hiện kịch bản hỏng dữ liệu có kiểm soát (Controlled Corruption), chất lượng RAG suy giảm rõ rệt: `Retrieval Hit Rate` sụt giảm 20% xuống còn **0.8000**, đồng thời hệ thống Quality Gates phát hiện lỗi sớm và chuyển trạng thái sang **`passed = False`** (phát hiện các dòng bị rỗng summary và tiêu đề bị biến dạng).
 
 Nhờ cơ chế lưu trữ dữ liệu thô ban đầu làm Single Source of Truth, luồng Recovery (`build_clean_dataframe`) khôi phục lại 100% dữ liệu sạch mà không cần can thiệp thủ công, đưa `Retrieval Hit Rate` phục hồi hoàn toàn trở lại **1.0000** và Quality Gates khôi phục lại **`passed = True`**.
 
@@ -55,8 +55,8 @@ Crossref REST API
 | ----------------- | -------------- | -------------------------- | ------------------------ | -------------- |
 | Ingestion         | Crossref REST API | Fetch API, HTTP 429/503 retry, parse DOI | `data/raw/crossref_records.json` | Vũ Minh Quang |
 | Cleaning          | Raw records list | Whitespace clean, `authors_joined`, `categories_joined`, `age_days`, `text_for_embedding` | `data/clean/papers_clean.csv` | Vũ Minh Quang |
-| Embedding/index   | Clean DataFrame | `all-MiniLM-L6-v2`, ChromaDB collection building | `data/embeddings/papers_embeddings.json` | Phạm Kiên |
-| Evaluation        | Clean DataFrame & Index | Generator `build_test_set`, `evaluate_pipeline` | `data/eval/test_set.json`, `baseline_metrics.json` | Phạm Kiên |
+| Embedding/index   | Clean DataFrame | `all-MiniLM-L6-v2`, ChromaDB collection building | `data/embeddings/papers_embeddings.json` | Phạm Trung Kiên |
+| Evaluation        | Clean DataFrame & Index | Generator `build_test_set`, `evaluate_pipeline` | `data/eval/test_set.json`, `baseline_metrics.json` | Phạm Trung Kiên |
 | Observability     | Clean DataFrame | Data Quality Gates (null, duplicate, summary), Freshness report | `data/quality/baseline_quality.json`, `freshness_report.json` | Lương Ngọc Quang |
 | Corruption/repair | Clean DataFrame & Raw records | 6 kịch bản gây lỗi, repair tự động từ raw records | `papers_clean_corrupted.csv`, `papers_clean_repaired.csv` | Vũ Minh Quang |
 | Orchestration     | Settings & Pipeline Modules | Điều phối luồng `phase1.py` & `corruption_flow.py` | `phase1_report.md`, `corruption_report.md` | Vũ Minh Quang |
@@ -255,11 +255,11 @@ Mô tả một vấn đề phát sinh khi ghép các module trong pipeline và c
 ## 13. Checklist trước khi nộp
 
 - [x] Thông tin nhóm và repository chính xác.
-- [x] Phân công khớp với module, artifact và kết quả thực tế.
+- [x] Phân công khớp với module, artifact và kết quả thực tế của 3 thành viên (`01515`, `01525`, `01563`).
 - [x] Lệnh tái hiện đã được chạy lại trên phiên bản dùng để nộp.
 - [x] Baseline, corrupted và repaired dùng cùng evaluation set.
 - [x] Bảng metrics khớp với các file trong `data/results/`.
 - [x] Quality/freshness conclusions khớp với `data/quality/`.
 - [x] Các đường dẫn báo cáo và artifact truy cập được.
-- [x] Mỗi thành viên đã hoàn thành báo cáo vai trò riêng.
+- [x] Mỗi thành viên đã hoàn thành báo cáo vai trò riêng (`individual_report_01515.md`, `individual_report_01525.md`, `individual_report_01563.md`).
 - [x] Không có `.env`, API key, token hoặc secret trong source, report, log hay ảnh.
